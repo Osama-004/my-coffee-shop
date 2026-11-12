@@ -1,11 +1,41 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>متجر القهوة</title>
-</head>
-<body style="text-align: center; font-family: Arial; background-color: #f4ece1; padding: 50px;">
-    <h1>أهلاً بك في تطبيق طَلَبك للقهوة ☕</h1>
-    <p>تم إطلاق هذا الموقع أوتوماتيكياً باستخدام CI/CD!</p>
-</body>
-</html>
+name: Deploy Website CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. سحب الكود من الخزنة
+        uses: actions/checkout@v4
+
+      - name: 2. فحص وجود الملفات الأساسية (Test)
+        run: |
+          if [ ! -f "index.html" ]; then
+            echo "خطأ: ملف الموقع غير موجود!"
+            exit 1
+          fi
+          echo "الفحص نجح! الموقع سليم 100%"
+
+      - name: 3. تجهيز ملفات الموقع للنشر
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+  deploy-to-server:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 4. الإطلاق على السيرفر الحقيقي
+        id: deployment
+        uses: actions/deploy-pages@v4
